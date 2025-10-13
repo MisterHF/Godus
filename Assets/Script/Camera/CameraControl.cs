@@ -1,64 +1,90 @@
-using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.UI;
+using System.Collections;
 
 public class CameraControl : MonoBehaviour
 { 
-    //Cam
     private Camera _camera;
-    //Pan
+
     [SerializeField] private float panSpeed = 6f;
+    [SerializeField] private float baseHeight = 10f;
+    [SerializeField] private float elevatedHeight = 30f;
+    [SerializeField] private float heightTransitionDuration = 0.3f;
 
-    //Zoom
-    [SerializeField] private float zoomSpeed = 6f;
-    [SerializeField] private float zoomSmoothness = 6f;
-    [SerializeField] private float minZoom = 2f;
-    [SerializeField] private float maxZoom = 40f;
-    private float _currentZoom;
-    
-    //Rotation
-    [SerializeField] private float rotateSpeed = 20f;
-    
-    
-  private void Awake()
-  {
-    _camera = GetComponentInChildren<Camera>();
-  }
+    private bool isElevated = false;
+    private bool isTransitioning = false;
 
-  private void Update()
-  {
-      Pan();
-      Zoom();
-      RotateLeft();
-      RotateRight();
-  }
+    private void Awake()
+    {
+        _camera = GetComponentInChildren<Camera>();
+        Vector3 pos = _camera.transform.localPosition;
+        pos.y = baseHeight;
+        _camera.transform.localPosition = pos;
+    }
 
-  private void Pan()
-  {
-      Vector2 panPos = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
-      transform.position += Quaternion.Euler(0, _camera.transform.eulerAngles.y, 0) * new Vector3(panPos.x, 0, panPos.y) * (panSpeed *  Time.deltaTime);
-  }
+    private void Update()
+    {
+        Pan();
+        HandleScrollInput();
+    }
 
-  private void Zoom()
-  {
-      _currentZoom = Mathf.Clamp(_currentZoom - Input.mouseScrollDelta.y * zoomSpeed * Time.deltaTime, minZoom, maxZoom);
-      _camera.orthographicSize = Mathf.Lerp(_camera.orthographicSize, _currentZoom, zoomSmoothness * Time.deltaTime);
-  }
+    private void Pan()
+    {
+        Vector2 input = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+        Vector3 direction = Quaternion.Euler(0, _camera.transform.eulerAngles.y, 0) * new Vector3(input.x, 0, input.y);
+        transform.position += direction * panSpeed * Time.deltaTime;
+    }
 
-  float GetAxis()
-  {
-      float mouseDeltaX = Input.GetAxis("Mouse X");
-      return mouseDeltaX;
-  }
- 
+    private void HandleScrollInput()
+    {
+        if (isTransitioning)
+            return;
 
-  private void RotateLeft()
-  {
-      transform.Rotate(Vector3.up, GetAxis() * rotateSpeed);
-  }  
-  
-  private void RotateRight()
-  {
-      transform.Rotate(Vector3.up, -GetAxis() * rotateSpeed);
-  }
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+
+        if (scroll > 0f && !isElevated)
+        {
+            ElevateCamera();
+        }
+        else if (scroll < 0f && isElevated)
+        {
+            LowerCamera();
+        }
+    }
+
+    public void ElevateCamera()
+    {
+        if (isTransitioning || isElevated)
+            return;
+
+        StartCoroutine(SmoothHeightChange(elevatedHeight, true));
+    }
+
+    public void LowerCamera()
+    {
+        if (isTransitioning || !isElevated)
+            return;
+
+        StartCoroutine(SmoothHeightChange(baseHeight, false));
+    }
+
+    private IEnumerator SmoothHeightChange(float targetHeight, bool elevate)
+    {
+        isTransitioning = true;
+
+        Vector3 start = _camera.transform.localPosition;
+        Vector3 end = new Vector3(start.x, targetHeight, start.z);
+        float elapsed = 0f;
+
+        while (elapsed < heightTransitionDuration)
+        {
+            _camera.transform.localPosition = Vector3.Lerp(start, end, elapsed / heightTransitionDuration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        _camera.transform.localPosition = end;
+        isElevated = elevate;
+        isTransitioning = false;
+    }
 }
