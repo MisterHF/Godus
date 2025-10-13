@@ -17,30 +17,28 @@ public class EditTerrainTool : MonoBehaviour
 
     // Line Renderer
     private LineRenderer _lineRenderer;
+    private GameObject _brushCircleObject;
     [SerializeField] private int circleSegments = 64;
 
-    UpdatePositionOnTerrain _updatePositionOnTerrain;
     void Awake()
     {
-        if (_lineRenderer == null)
-        {
-            GameObject lrObj = new GameObject("BrushCircle");
-            lrObj.transform.parent = this.transform;
-            _lineRenderer = lrObj.AddComponent<LineRenderer>();
-            _lineRenderer.useWorldSpace = true;
-            _lineRenderer.loop = true;
-            _lineRenderer.material = new Material(Shader.Find("Unlit/Color"));
-            _lineRenderer.material.color = Color.red;
-            _lineRenderer.widthMultiplier = 0.05f;
-        }
+        _brushCircleObject = new GameObject("BrushCircle");
+        _brushCircleObject.transform.parent = this.transform;
+
+        _lineRenderer = _brushCircleObject.AddComponent<LineRenderer>();
+        _lineRenderer.useWorldSpace = true;
+        _lineRenderer.loop = true;
+        _lineRenderer.material = new Material(Shader.Find("Unlit/Color"));
+        _lineRenderer.material.color = Color.red;
+        _lineRenderer.widthMultiplier = 0.05f;
     }
 
     void Start()
     {
         _terrainData = Instantiate(terrain.terrainData);
         terrain.terrainData = _terrainData;
+
         TerrainCollider terrainCollider = terrain.GetComponent<TerrainCollider>();
-        
         if (terrainCollider != null)
         {
             terrainCollider.terrainData = _terrainData;
@@ -50,6 +48,17 @@ public class EditTerrainTool : MonoBehaviour
         _heightMapHeight = _terrainData.heightmapResolution;
     }
 
+    void OnEnable()
+    {
+        if (_brushCircleObject != null)
+            _brushCircleObject.SetActive(true);
+    }
+
+    void OnDisable()
+    {
+        if (_brushCircleObject != null)
+            _brushCircleObject.SetActive(false);
+    }
 
     void FixedUpdate()
     {
@@ -62,7 +71,7 @@ public class EditTerrainTool : MonoBehaviour
             float brushRadius = sizeBrush / 2f;
 
             DrawBrushCircle(brushCenter, brushRadius);
-            
+
             bool isLeftClick = Input.GetMouseButton(0);
             bool isRightClick = Input.GetMouseButton(1);
 
@@ -81,7 +90,7 @@ public class EditTerrainTool : MonoBehaviour
 
                 float distance = Vector2.Distance(brushXZ, targetXZ);
                 bool isInBrush = distance <= brushRadius;
-
+                
                 if (isInBrush && (isLeftClick || isRightClick))
                 {
                     if (!target.enabled)
@@ -95,8 +104,6 @@ public class EditTerrainTool : MonoBehaviour
             }
         }
     }
-
-
 
     void ModifyTerrain(Vector3 pos, float direction)
     {
@@ -112,7 +119,7 @@ public class EditTerrainTool : MonoBehaviour
         int startX = Mathf.Clamp(centerX - halfBrushSize, 0, _heightMapWidth - brushSize);
         int startZ = Mathf.Clamp(centerZ - halfBrushSize, 0, _heightMapHeight - brushSize);
 
-        float[,] heights = _terrainData.GetHeights(startX, startZ, brushSize, brushSize); //still don't quite truly understand this guy
+        float[,] heights = _terrainData.GetHeights(startX, startZ, brushSize, brushSize);
 
         for (int x = 0; x < brushSize; x++)
         {
@@ -132,7 +139,6 @@ public class EditTerrainTool : MonoBehaviour
         }
 
         _terrainData.SetHeights(startX, startZ, heights);
-        
     }
 
     void DrawBrushCircle(Vector3 center, float radius)
