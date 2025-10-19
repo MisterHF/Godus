@@ -5,7 +5,8 @@ public class LightningSpell : SpellBehavior
 {
     public override void CastSpell(GameObject target)
     {
-        if (target.CompareTag("Enemy"))
+        Debug.Log("CastSpell called on: " + target.name);
+        if (target.transform.gameObject.layer == LayerMask.NameToLayer("Enemy"))
         {
             if (data.spellEffectPrefab)
             {
@@ -20,7 +21,8 @@ public class LightningSpell : SpellBehavior
                 else
                     Destroy(fx, 3f);
             }
-            Destroy(target);
         }
+
+        Destroy(target);
     }
 }

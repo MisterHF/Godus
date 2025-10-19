@@ -10,6 +10,11 @@ public class CameraControl : MonoBehaviour
     [SerializeField] private float baseHeight = 10f;
     [SerializeField] private float elevatedHeight = 30f;
     [SerializeField] private float heightTransitionDuration = 0.3f;
+    
+    [SerializeField] private Button humansButton;
+    [SerializeField] private Button hellButton;
+    [SerializeField] private Color activeColor = Color.green;
+    [SerializeField] private Color inactiveColor = Color.white;
 
     private bool isElevated = false;
     private bool isTransitioning = false;
@@ -71,7 +76,6 @@ public class CameraControl : MonoBehaviour
     private IEnumerator SmoothHeightChange(float targetHeight, bool elevate)
     {
         isTransitioning = true;
-
         Vector3 start = _camera.transform.localPosition;
         Vector3 end = new Vector3(start.x, targetHeight, start.z);
         float elapsed = 0f;
@@ -86,5 +90,21 @@ public class CameraControl : MonoBehaviour
         _camera.transform.localPosition = end;
         isElevated = elevate;
         isTransitioning = false;
+
+        UpdateButtonStates();
     }
+    private void UpdateButtonStates()
+    {
+        if (!isElevated)
+        {
+            hellButton.image.color = activeColor;
+            humansButton.image.color = inactiveColor;
+        }
+        else
+        {
+            hellButton.image.color = inactiveColor;
+            humansButton.image.color = activeColor;
+        }
+    }
+
 }

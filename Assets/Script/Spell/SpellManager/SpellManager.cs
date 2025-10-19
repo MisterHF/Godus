@@ -1,5 +1,6 @@
 using UnityEngine;
 
+
 public class SpellManager : MonoBehaviour
 {
     public static SpellManager Instance;
@@ -14,6 +15,7 @@ public class SpellManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
     }
 
@@ -52,10 +54,12 @@ public class SpellManager : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit))
+            if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, 1<<8))
             {
-                spellBehavior.CastSpell(hit.collider.gameObject);
-                CancelSpell();
+                    Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.red, 5f);
+                    Debug.Log(hit.transform.gameObject.name);
+                    spellBehavior.CastSpell(hit.collider.gameObject);
+                    CancelSpell();
             }
         }
     }
